@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix 共享狀態艙</title>
+    <title>網飛錯時師</title>
     
     <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/19qbYqFrzN9juMvM4w_nTRI9ZZRbUb7Ad">
     <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/19qbYqFrzN9juMvM4w_nTRI9ZZRbUb7Ad">
@@ -272,6 +272,16 @@
             </div>
         </div>
 
+        <div class="select-group" id="mentionGroup">
+            <label class="select-label">通知對象 (Discord @)</label>
+            <div class="select-wrapper">
+                <select id="mentionSelect">
+                    <option value="lijerry">👤 @lijerry</option>
+                    <option value="小揖ΛτλαnTIs">👤 @小揖ΛτλαnTIs</option>
+                </select>
+            </div>
+        </div>
+
         <button id="toggleBtn" class="btn">請稍候</button>
         
         <div class="online-counter">
@@ -305,6 +315,12 @@
 
         const discordWebhookUrl = "https://discord.com/api/webhooks/1515276194956968117/-v4bXCUgMTy8P-7YjjafPJp1EZRgIb61oI2-iajdEnssSZ9Z4RqFNhdKTYnFbVOWC-Ca";
 
+        // 💡 提醒：請記得把這裡的 ID 替換為你們群組中 lijerry 與 小揖 的真實 Discord ID！
+        const discordIdMap = {
+            "lijerry": "965160772600729601",   
+            "小揖ΛτλαnTIs": "1302615048086225013"       
+        };
+
         const avatarMap = {
             "default": "https://lh3.googleusercontent.com/d/10pwnPxb8vho0vIuubjR_rW265g-k3cRj", 
             "lijerry": "https://lh3.googleusercontent.com/d/1EF5Z9Y7qHk7NKXGqxfzl89P-ljRutZDO", 
@@ -318,6 +334,7 @@
         const userSelect = document.getElementById('userSelect');
         const modeSelect = document.getElementById('modeSelect');
         const deviceSelect = document.getElementById('deviceSelect');
+        const mentionSelect = document.getElementById('mentionSelect'); 
         const userGroup = document.getElementById('userGroup'); 
         const modeGroup = document.getElementById('modeGroup');
         const deviceGroup = document.getElementById('deviceGroup');
@@ -328,19 +345,15 @@
         let currentWatchMode = "";
         let currentDevice = "";
 
-        if(localStorage.getItem('netflix_name')) {
-            userSelect.value = localStorage.getItem('netflix_name');
-        }
-        if(localStorage.getItem('netflix_mode')) {
-            modeSelect.value = localStorage.getItem('netflix_mode');
-        }
-        if(localStorage.getItem('netflix_device')) {
-            deviceSelect.value = localStorage.getItem('netflix_device');
-        }
+        if(localStorage.getItem('netflix_name')) { userSelect.value = localStorage.getItem('netflix_name'); }
+        if(localStorage.getItem('netflix_mode')) { modeSelect.value = localStorage.getItem('netflix_mode'); }
+        if(localStorage.getItem('netflix_device')) { deviceSelect.value = localStorage.getItem('netflix_device'); }
+        if(localStorage.getItem('netflix_mention')) { mentionSelect.value = localStorage.getItem('netflix_mention'); }
         
         userSelect.addEventListener('change', () => localStorage.setItem('netflix_name', userSelect.value));
         modeSelect.addEventListener('change', () => localStorage.setItem('netflix_mode', modeSelect.value));
         deviceSelect.addEventListener('change', () => localStorage.setItem('netflix_device', deviceSelect.value));
+        mentionSelect.addEventListener('change', () => localStorage.setItem('netflix_mention', mentionSelect.value));
 
         // 在線人數監聽
         const myPresenceRef = presenceRef.push();
@@ -381,6 +394,8 @@
                 userGroup.style.display = "none";
                 modeGroup.style.display = "none";
                 deviceGroup.style.display = "none";
+                // 💡 調整：有人看的時候也保持通知對象顯示，這樣「看完釋放」時才能選擇要 @ 誰
+                mentionGroup.style.display = "block"; 
             } else {
                 userAvatar.classList.remove('busy');
                 userAvatar.src = avatarMap["default"];
@@ -394,6 +409,7 @@
                 userGroup.style.display = "block";
                 modeGroup.style.display = "block";
                 deviceGroup.style.display = "block";
+                mentionGroup.style.display = "block"; 
             }
         });
 
@@ -402,7 +418,11 @@
             const selectedName = userSelect.value;
             const selectedMode = modeSelect.value;
             const selectedDevice = deviceSelect.value;
+            const selectedMention = mentionSelect.value; 
             const nextStatus = !currentStatus;
+
+            // 如果是要釋放帳號，使用當前在線上的名字
+            const activeUser = nextStatus ? selectedName : currentUserName;
 
             database.ref('netflix').update({
                 isUsing: nextStatus,
@@ -412,20 +432,36 @@
             }).then(() => {
                 if (discordWebhookUrl) {
                     let message = "";
+                    let mentionString = "";
+
+                    // 🆕 建立對應的 @ 語法字串（不論登入或釋放，只要選單有選對象都會加上）
+                    if (selectedMention !== "none") {
+                        const targetId = discordIdMap[selectedMention];
+                        if (targetId === "everyone") {
+                            mentionString = "@everyone ";
+                        } else if (targetId) {
+                            mentionString = `<@${targetId}> `; 
+                        }
+                    }
+
                     if (nextStatus) {
                         if (selectedMode === "正在下載影片") {
-                            message = `📥 **${selectedName}** 正在用【${selectedDevice}】下載 Netflix 影片，可能會佔用部分網速喔！`;
+                            message = `${mentionString}📥 **${activeUser}** 正在用【${selectedDevice}】下載 Netflix 影片，可能會佔用部分網速喔！`;
                         } else {
-                            message = `🔴 **${selectedName}** 開始用【${selectedDevice}】👉【${selectedMode}】觀看 Netflix 囉！`;
+                            message = `${mentionString}🔴 **${activeUser}** 開始用【${selectedDevice}】👉【${selectedMode}】觀看 Netflix 囉！`;
                         }
                     } else {
-                        message = `🟢 **${selectedName}** 已經看完囉！帳號已釋放，想看的人可以上線了。`;
+                        // 🆕 釋放帳號的訊息最前面現在也會帶上自訂的 @ 標籤
+                        message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放，想看的人可以上線了。`;
                     }
                     
                     fetch(discordWebhookUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content: message })
+                        body: JSON.stringify({ 
+                            content: message,
+                            allowed_mentions: { parse: ["everyone", "users"] } 
+                        })
                     }).catch(err => console.log("DC通知錯誤:", err));
                 }
             });

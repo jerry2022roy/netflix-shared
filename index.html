@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix 狀態同步器</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#141414">
+    <style>
+        body {
+            background-color: #141414;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .status-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .status-dot {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background-color: #46d369; /* 預設綠色：沒人用 */
+            box-shadow: 0 0 20px #46d369;
+            transition: all 0.3s ease;
+        }
+        .status-dot.busy {
+            background-color: #e50914; /* 紅色：有人在看 */
+            box-shadow: 0 0 20px #e50914;
+        }
+        .status-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .btn {
+            background-color: #ffffff;
+            color: #141414;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-container">
+        <div id="statusDot" class="status-dot"></div>
+        <div id="statusText" class="status-text">目前沒人使用，衝啊！</div>
+    </div>
+
+    <button id="toggleBtn" class="btn">我要開始看 Netflix</button>
+
+    <script>
+        // 註冊 PWA 的 Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker 註冊成功！'))
+                .catch(err => console.log('註冊失敗：', err));
+        }
+
+        // 模擬狀態（實際開發時，這裡要改成串接 Firebase 資料庫）
+        let isUsing = false;
+
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const toggleBtn = document.getElementById('toggleBtn');
+
+        function updateUI() {
+            if (isUsing) {
+                statusDot.classList.add('busy');
+                statusText.innerText = '有人正在看，先等等！';
+                toggleBtn.innerText = '我看完了（釋放帳號）';
+                toggleBtn.style.backgroundColor = '#e50914';
+                toggleBtn.style.color = 'white';
+            } else {
+                statusDot.classList.remove('busy');
+                statusText.innerText = '目前沒人使用，衝啊！';
+                toggleBtn.innerText = '我要開始看 Netflix';
+                toggleBtn.style.backgroundColor = '#ffffff';
+                toggleBtn.style.color = '#141414';
+            }
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            isUsing = !isUsing;
+            // TODO: 在這裡把 isUsing 的狀態上傳到 Firebase
+            updateUI();
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
-  "name": "Netflix 狀態同步器",
-  "short_name": "Netflix狀態",
+  "name": "網飛錯時師",
+  "short_name": "網飛錯時師",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#141414",
@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/5977/5977590.png",
+      "src": "https://lh3.googleusercontent.com/d/19qbYqFrzN9juMvM4w_nTRI9ZZRbUb7Ad",
       "type": "image/png",
       "sizes": "512x512"
     }

@@ -164,7 +164,7 @@
             letter-spacing: 0.5px;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(255,255,255,0.1);
         }
@@ -172,15 +172,24 @@
         .btn.busy-btn {
             background-color: var(--netflix-red);
             color: #ffffff;
-            box-shadow: 0 6px 24px rgba(229, 9, 20, 0.35);
+            box-shadow: 0 6px 24 rgba(229, 9, 20, 0.35);
         }
 
-        .btn.busy-btn:hover {
+        .btn.busy-btn:hover:not(:disabled) {
             background-color: #ff121d;
             box-shadow: 0 8px 28px rgba(229, 9, 20, 0.45);
         }
 
-        .btn:active { 
+        /* 🆕 按鈕被鎖定（停用）時的樣式 */
+        .btn:disabled {
+            background-color: #262626 !important;
+            color: #525252 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn:active:not(:disabled) { 
             transform: scale(0.97); 
         }
 
@@ -243,8 +252,8 @@
             <label class="select-label">使用成員</label>
             <div class="select-wrapper">
                 <select id="userSelect">
-                    <option value="lijerry">👤lijerry</option>
-                    <option value="小揖ΛτλαnTIs">👤小揖Λτλαnτιs</option>
+                    <option value="lijerry">lijerry</option>
+                    <option value="小揖ΛτλαnTIs">小揖Λτλαnτιs</option>
                 </select>
             </div>
         </div>
@@ -276,6 +285,8 @@
             <label class="select-label">通知對象 (Discord @)</label>
             <div class="select-wrapper">
                 <select id="mentionSelect">
+                    <option value="none">🚫 不通知任何人</option>
+                    <option value="everyone">📢 @everyone (全員)</option>
                     <option value="lijerry">👤 @lijerry</option>
                     <option value="小揖ΛτλαnTIs">👤 @小揖ΛτλαnTIs</option>
                 </select>
@@ -310,13 +321,11 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        const netflixStatusRef = database.ref('netflix/isUsing');
         const presenceRef = database.ref('netflix/onlineUsers');
-
         const discordWebhookUrl = "https://discord.com/api/webhooks/1515276194956968117/-v4bXCUgMTy8P-7YjjafPJp1EZRgIb61oI2-iajdEnssSZ9Z4RqFNhdKTYnFbVOWC-Ca";
 
-        // 💡 提醒：請記得把這裡的 ID 替換為你們群組中 lijerry 與 小揖 的真實 Discord ID！
         const discordIdMap = {
+            "everyone": "everyone",
             "lijerry": "965160772600729601",   
             "小揖ΛτλαnTIs": "1302615048086225013"       
         };
@@ -338,6 +347,7 @@
         const userGroup = document.getElementById('userGroup'); 
         const modeGroup = document.getElementById('modeGroup');
         const deviceGroup = document.getElementById('deviceGroup');
+        const mentionGroup = document.getElementById('mentionGroup');
         const onlineCount = document.getElementById('onlineCount');
         
         let currentStatus = false;
@@ -375,6 +385,9 @@
             currentWatchMode = data.watchMode || "";
             currentDevice = data.device || "電視";
             
+            // 獲取目前「打開網頁的這台裝置」儲存的名字是什麼
+            const myStoredName = localStorage.getItem('netflix_name') || userSelect.value;
+
             if (currentStatus) {
                 userAvatar.classList.add('busy');
                 
@@ -388,14 +401,23 @@
                 statusText.innerText = '有人正在看，先等等！';
                 statusText.style.color = 'var(--netflix-red)';
                 userText.innerHTML = `🎬 使用者：<strong style="color:white">${currentUserName}</strong><br>ℹ️ 狀態：<span style="color:#d4d4d4">${currentWatchMode} (${currentDevice})</span>`;
-                toggleBtn.innerText = '我看完了（釋放帳號）';
-                toggleBtn.classList.add('busy-btn');
+                
+                // 🆕 核心防錯安全鎖：只有當前觀看者的網頁可以點擊「釋放」，其他人按鈕會被禁用
+                if (myStoredName === currentUserName) {
+                    toggleBtn.innerText = '我看完了（釋放帳號）';
+                    toggleBtn.classList.add('busy-btn');
+                    toggleBtn.disabled = false;
+                    mentionGroup.style.display = "block"; 
+                } else {
+                    toggleBtn.innerText = `🔒 只有 ${currentUserName} 能釋放狀態`;
+                    toggleBtn.classList.remove('busy-btn');
+                    toggleBtn.disabled = true; // 鎖定按鈕，防止別人不小心點到！
+                    mentionGroup.style.display = "none"; 
+                }
                 
                 userGroup.style.display = "none";
                 modeGroup.style.display = "none";
                 deviceGroup.style.display = "none";
-                // 💡 調整：有人看的時候也保持通知對象顯示，這樣「看完釋放」時才能選擇要 @ 誰
-                mentionGroup.style.display = "block"; 
             } else {
                 userAvatar.classList.remove('busy');
                 userAvatar.src = avatarMap["default"];
@@ -405,6 +427,7 @@
                 userText.innerHTML = `🟢 帳號目前空閒中<br><span style="color:#737373; font-size:12px;">選好身分與模式即可一鍵佔位</span>`;
                 toggleBtn.innerText = '我要開始看 Netflix';
                 toggleBtn.classList.remove('busy-btn');
+                toggleBtn.disabled = false; // 空閒時所有人都可以點擊
                 
                 userGroup.style.display = "block";
                 modeGroup.style.display = "block";
@@ -415,13 +438,14 @@
 
         // 點擊事件
         toggleBtn.addEventListener('click', () => {
+            if (toggleBtn.disabled) return; // 安全保護
+
             const selectedName = userSelect.value;
             const selectedMode = modeSelect.value;
             const selectedDevice = deviceSelect.value;
             const selectedMention = mentionSelect.value; 
             const nextStatus = !currentStatus;
 
-            // 如果是要釋放帳號，使用當前在線上的名字
             const activeUser = nextStatus ? selectedName : currentUserName;
 
             database.ref('netflix').update({
@@ -434,7 +458,6 @@
                     let message = "";
                     let mentionString = "";
 
-                    // 🆕 建立對應的 @ 語法字串（不論登入或釋放，只要選單有選對象都會加上）
                     if (selectedMention !== "none") {
                         const targetId = discordIdMap[selectedMention];
                         if (targetId === "everyone") {
@@ -451,7 +474,6 @@
                             message = `${mentionString}🔴 **${activeUser}** 開始用【${selectedDevice}】👉【${selectedMode}】觀看 Netflix 囉！`;
                         }
                     } else {
-                        // 🆕 釋放帳號的訊息最前面現在也會帶上自訂的 @ 標籤
                         message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放，想看的人可以上線了。`;
                     }
                     

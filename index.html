@@ -4,169 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netflix 共享狀態艙</title>
+    
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/19qbYqFrzN9juMvM4w_nTRI9ZZRbUb7Ad">
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/19qbYqFrzN9juMvM4w_nTRI9ZZRbUb7Ad">
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0a0a">
     <style>
         :root {
             --netflix-red: #e50914;
-            --netflix-red-glow: rgba(229, 9, 20, 0.6);
-            --netflix-black: #0a0a0a;
+            --netflix-red-glow: rgba(229, 9, 20, 0.5);
             --netflix-green: #46d369;
-            --netflix-green-glow: rgba(70, 211, 105, 0.6);
+            --netflix-green-glow: rgba(70, 211, 105, 0.5);
+            --netflix-black: #0a0a0a;
+            --card-bg: rgba(15, 15, 15, 0.75);
+            --border-light: rgba(255, 255, 255, 0.08);
+            --text-secondary: #a3a3a3;
         }
         
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         body {
             background: var(--netflix-black);
             background-image: 
-                radial-gradient(circle at 20% 30%, rgba(225, 9, 20, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(45, 45, 45, 0.3) 0%, transparent 50%);
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                radial-gradient(circle at 10% 20%, rgba(229, 9, 20, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(45, 45, 45, 0.25) 0%, transparent 50%);
+            color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
             overflow: hidden;
         }
 
         .card {
-            background: rgba(20, 20, 20, 0.65);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border-radius: 24px;
-            padding: 30px 30px;
-            width: 90%;
+            background: var(--card-bg);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border-radius: 28px;
+            padding: 40px 32px;
+            width: 100%;
             max-width: 380px;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.5s ease;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-light);
+            transform: translateY(0);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
         }
 
+        /* 狀態外框與頭像 */
         .status-wrapper {
             position: relative;
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 20px;
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 24px;
         }
 
         .user-avatar {
             width: 100%;
             height: 100%;
-            border-radius: 16px;
+            border-radius: 22px;
             object-fit: cover;
             border: 3px solid var(--netflix-green);
-            box-shadow: 0 0 25px var(--netflix-green-glow);
-            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 30px var(--netflix-green-glow);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .user-avatar.busy {
             border-color: var(--netflix-red);
-            box-shadow: 0 0 35px var(--netflix-red-glow);
-            transform: scale(1.06);
+            box-shadow: 0 0 40px var(--netflix-red-glow);
+            transform: scale(1.05);
+            animation: pulseGlow 2s infinite ease-in-out;
         }
 
         .status-text {
-            font-size: 24px;
+            font-size: 23px;
             font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
+            transition: color 0.3s ease;
         }
 
         .user-text {
             font-size: 14px;
-            color: #a3a3a3;
-            margin-bottom: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
             line-height: 1.6;
             font-weight: 500;
         }
 
+        /* 表單選單 */
         .select-group {
             text-align: left;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             width: 100%;
-            animation: fadeIn 0.4s ease;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .select-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #737373;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: block;
-            padding-left: 2px;
+            padding-left: 4px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+        }
+
+        .select-wrapper {
+            position: relative;
+            width: 100%;
         }
 
         select {
-            background: rgba(0, 0, 0, 0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23737373'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 16px center;
+            background: rgba(0, 0, 0, 0.4) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a3a3a3'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 16px center;
             color: #f5f5f5;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 12px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 20px;
             font-size: 15px;
             font-weight: 600;
-            border-radius: 12px;
+            border-radius: 14px;
             width: 100%;
             outline: none;
-            box-sizing: border-box;
             appearance: none;
             -webkit-appearance: none;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
         }
 
         select:focus {
-            border-color: rgba(255, 255, 255, 0.3);
-            background-color: rgba(15, 15, 15, 0.8);
+            border-color: rgba(255, 255, 255, 0.25);
+            background-color: rgba(10, 10, 10, 0.85);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
         }
 
+        /* 按鈕 */
         .btn {
             background-color: #ffffff;
             color: var(--netflix-black);
             border: none;
-            padding: 16px;
+            padding: 16px 20px;
             font-size: 16px;
             font-weight: 700;
-            border-radius: 14px;
+            border-radius: 16px;
             cursor: pointer;
             width: 100%;
-            margin-top: 10px;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            margin-top: 12px;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255,255,255,0.1);
         }
 
         .btn.busy-btn {
             background-color: var(--netflix-red);
-            color: white;
-            box-shadow: 0 6px 24px rgba(229, 9, 20, 0.3);
+            color: #ffffff;
+            box-shadow: 0 6px 24px rgba(229, 9, 20, 0.35);
+        }
+
+        .btn.busy-btn:hover {
+            background-color: #ff121d;
+            box-shadow: 0 8px 28px rgba(229, 9, 20, 0.45);
         }
 
         .btn:active { 
             transform: scale(0.97); 
         }
 
+        /* 在線人數計數器 */
         .online-counter {
-            margin-top: 24px;
+            margin-top: 26px;
             font-size: 12px;
             font-weight: 600;
             color: #737373;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255,255,255,0.03);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255,255,255,0.05);
             padding: 6px 16px;
             border-radius: 20px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            letter-spacing: 0.3px;
         }
+
         .online-counter::before {
             content: '';
             width: 6px;
@@ -174,12 +207,25 @@
             background: #00e676;
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 8px #00e676;
+            box-shadow: 0 0 10px #00e676;
+            animation: blink 1.5s infinite alternate;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+        /* 動畫效果 */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes blink {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 30px rgba(229, 9, 20, 0.4); }
+            50% { box-shadow: 0 0 45px rgba(229, 9, 20, 0.65); }
+            100% { box-shadow: 0 0 30px rgba(229, 9, 20, 0.4); }
         }
     </style>
 </head>
@@ -195,29 +241,35 @@
 
         <div class="select-group" id="userGroup">
             <label class="select-label">使用成員</label>
-            <select id="userSelect">
-                <option value="lijerry">lijerry</option>
-                <option value="小揖ΛτλαnTIs">小揖Λτλαnτιs</option>
-            </select>
+            <div class="select-wrapper">
+                <select id="userSelect">
+                    <option value="lijerry">lijerry</option>
+                    <option value="小揖ΛτλαnTIs">小揖Λτλαnτιs</option>
+                </select>
+            </div>
         </div>
 
         <div class="select-group" id="modeGroup">
             <label class="select-label">觀看模式</label>
-            <select id="modeSelect">
-                <option value="在線看">在線看</option>
-                <option value="離線看">離線看</option>
-                <option value="正在下載影片">正在下載影片</option>
-            </select>
+            <div class="select-wrapper">
+                <select id="modeSelect">
+                    <option value="在線看">在線看</option>
+                    <option value="離線看">離線看</option>
+                    <option value="正在下載影片">正在下載影片</option>
+                </select>
+            </div>
         </div>
 
         <div class="select-group" id="deviceGroup">
             <label class="select-label">使用裝置</label>
-            <select id="deviceSelect">
-                <option value="電視">📺 電視</option>
-                <option value="電腦">💻 電腦</option>
-                <option value="手機">📱 手機</option>
-                <option value="平板">📱 平板</option>
-            </select>
+            <div class="select-wrapper">
+                <select id="deviceSelect">
+                    <option value="電視">📺 電視</option>
+                    <option value="電腦">💻 電補</option>
+                    <option value="手機">📱 手機</option>
+                    <option value="平板">📱 平板</option>
+                </select>
+            </div>
         </div>
 
         <button id="toggleBtn" class="btn">請稍候</button>
@@ -253,11 +305,10 @@
 
         const discordWebhookUrl = "https://discord.com/api/webhooks/1515276194956968117/-v4bXCUgMTy8P-7YjjafPJp1EZRgIb61oI2-iajdEnssSZ9Z4RqFNhdKTYnFbVOWC-Ca";
 
-        // 已修正：將原本的 Google 雲端硬碟預覽連結改為實體圖片直連格式
         const avatarMap = {
             "default": "https://lh3.googleusercontent.com/d/10pwnPxb8vho0vIuubjR_rW265g-k3cRj", 
             "lijerry": "https://lh3.googleusercontent.com/d/1EF5Z9Y7qHk7NKXGqxfzl89P-ljRutZDO", 
-            "小揖Λτλαnτιs": "https://lh3.googleusercontent.com/d/12uWJafonhbE2QBfUjmwLo2DeFSXn-6Vt" 
+            "小揖ΛτλαnTIs": "https://lh3.googleusercontent.com/d/12uWJafonhbE2QBfUjmwLo2DeFSXn-6Vt" 
         };
 
         const userAvatar = document.getElementById('userAvatar');
@@ -267,6 +318,7 @@
         const userSelect = document.getElementById('userSelect');
         const modeSelect = document.getElementById('modeSelect');
         const deviceSelect = document.getElementById('deviceSelect');
+        const userGroup = document.getElementById('userGroup'); 
         const modeGroup = document.getElementById('modeGroup');
         const deviceGroup = document.getElementById('deviceGroup');
         const onlineCount = document.getElementById('onlineCount');
@@ -276,7 +328,6 @@
         let currentWatchMode = "";
         let currentDevice = "";
 
-        // 讀取本地快取紀錄
         if(localStorage.getItem('netflix_name')) {
             userSelect.value = localStorage.getItem('netflix_name');
         }
@@ -287,7 +338,6 @@
             deviceSelect.value = localStorage.getItem('netflix_device');
         }
         
-        // 監聽選擇變更並寫入快取
         userSelect.addEventListener('change', () => localStorage.setItem('netflix_name', userSelect.value));
         modeSelect.addEventListener('change', () => localStorage.setItem('netflix_mode', modeSelect.value));
         deviceSelect.addEventListener('change', () => localStorage.setItem('netflix_device', deviceSelect.value));
@@ -304,7 +354,7 @@
             onlineCount.innerText = snapshot.numChildren();
         });
 
-        // 監聽雲端庫，即時切換狀態、頭像與裝置
+        // 監聽雲端狀態
         database.ref('netflix').on('value', (snapshot) => {
             const data = snapshot.val() || {};
             currentStatus = data.isUsing || false;
@@ -314,15 +364,23 @@
             
             if (currentStatus) {
                 userAvatar.classList.add('busy');
-                userAvatar.src = avatarMap[currentUserName] || avatarMap["default"];
+                
+                let matchedAvatar = avatarMap[currentUserName];
+                if (!matchedAvatar) {
+                    const foundKey = Object.keys(avatarMap).find(key => key.toLowerCase() === currentUserName.toLowerCase());
+                    matchedAvatar = avatarMap[foundKey];
+                }
+                userAvatar.src = matchedAvatar || avatarMap["default"];
                 
                 statusText.innerText = '有人正在看，先等等！';
                 statusText.style.color = 'var(--netflix-red)';
                 userText.innerHTML = `🎬 使用者：<strong style="color:white">${currentUserName}</strong><br>ℹ️ 狀態：<span style="color:#d4d4d4">${currentWatchMode} (${currentDevice})</span>`;
                 toggleBtn.innerText = '我看完了（釋放帳號）';
                 toggleBtn.classList.add('busy-btn');
+                
+                userGroup.style.display = "none";
                 modeGroup.style.display = "none";
-                deviceGroup.style.display = "none"; // 佔位時隱藏裝置選單
+                deviceGroup.style.display = "none";
             } else {
                 userAvatar.classList.remove('busy');
                 userAvatar.src = avatarMap["default"];
@@ -332,12 +390,14 @@
                 userText.innerHTML = `🟢 帳號目前空閒中<br><span style="color:#737373; font-size:12px;">選好身分與模式即可一鍵佔位</span>`;
                 toggleBtn.innerText = '我要開始看 Netflix';
                 toggleBtn.classList.remove('busy-btn');
+                
+                userGroup.style.display = "block";
                 modeGroup.style.display = "block";
-                deviceGroup.style.display = "block"; // 空閒時顯示裝置選單
+                deviceGroup.style.display = "block";
             }
         });
 
-        // 觸發按鈕
+        // 點擊事件
         toggleBtn.addEventListener('click', () => {
             const selectedName = userSelect.value;
             const selectedMode = modeSelect.value;
@@ -348,7 +408,7 @@
                 isUsing: nextStatus,
                 currentUser: nextStatus ? selectedName : "",
                 watchMode: nextStatus ? selectedMode : "",
-                device: nextStatus ? selectedDevice : "" // 寫入裝置資料
+                device: nextStatus ? selectedDevice : ""
             }).then(() => {
                 if (discordWebhookUrl) {
                     let message = "";

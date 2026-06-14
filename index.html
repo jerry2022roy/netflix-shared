@@ -1083,7 +1083,9 @@
                     statusText.style.color = 'var(--netflix-red)';
                     userText.innerHTML = `⏳ 錯時防撞鎖定中<br><span style="color:#737373; font-size:12px;">前一位釋放者：${serverLastReleaseUser}</span>`;
                     
-                    forceReleaseBtn.style.display = 'block'; // 冷卻中依舊允許其他人再次強制解鎖
+                    // ✨ 核心修正：當頁面處理於冷卻倒數介面時，強制隱藏「⚠️ 強制釋放」按鈕
+                    forceReleaseBtn.style.display = 'none'; 
+                    
                     modeGroup.classList.add('hide-animate');
                     deviceGroup.classList.add('hide-animate');
                 } else {
@@ -1179,7 +1181,7 @@
             });
         });
 
-        // 🚨 強制釋放按鈕 (已同步加上 10 分鐘冷卻鎖)
+        // 🚨 強制釋放按鈕 (保留 10 分鐘冷卻，且冷卻介面會自動隱藏此按鈕)
         forceReleaseBtn.addEventListener('click', () => {
             showConfirm(`確定要強制解除鎖定狀態嗎？(請先確認對方不是正在看喔)`, () => {
                 const previousUser = currentUserName || serverLastReleaseUser; 

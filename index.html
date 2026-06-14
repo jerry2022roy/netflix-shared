@@ -824,8 +824,8 @@
             onlineCount.innerText = snapshot.numChildren();
         });
 
-        // 🤖 Discord 機器人發送通知
-        function sendDiscordNotification(activeUser, targetUser, isStarting, selectedMode, selectedDevice, isForced = false, cooldownUnlockTimeStr = "", totalDurationStr = "") {
+        // 🤖 Discord 機器人發送通知 (完美融合 userIP 參數，同步推送外網 IP 至 Discord)
+        function sendDiscordNotification(activeUser, targetUser, isStarting, selectedMode, selectedDevice, isForced = false, cooldownUnlockTimeStr = "", totalDurationStr = "", userIP = "") {
             if (!discordWebhookUrl) return;
 
             let message = "";
@@ -834,22 +834,25 @@
             
             if (targetId) { mentionString = `<@${targetId}> `; }
 
+            // 格式化 IP 顯示字串（讓你在 DC 訊息中能看見此人當下操作的 IP 來源）
+            let ipInfo = userIP ? `\n🌐 **【操作來源 IP】** \`${userIP}\`` : "";
+
             if (isStarting) {
                 if (selectedMode === "正在下載影片") {
-                    message = `${mentionString}📥 **${activeUser}** 正在用【${selectedDevice}】下載 Netflix 影片，可能會佔用部分網速喔！`;
+                    message = `${mentionString}📥 **${activeUser}** 正在用【${selectedDevice}】下載 Netflix 影片，可能會佔用部分網速喔！${ipInfo}`;
                 } else {
-                    message = `${mentionString}🔴 **${activeUser}** 開始用【${selectedDevice}】👉【${selectedMode}】觀看 Netflix 囉！`;
+                    message = `${mentionString}🔴 **${activeUser}** 開始用【${selectedDevice}】👉【${selectedMode}】觀看 Netflix 囉！${ipInfo}`;
                 }
             } else {
                 if (isForced) {
-                    message = `${mentionString}⚠️ **${activeUser}** 判定對方的裝置已休眠或忘記關閉，已將 **${targetUser}** 的狀態【強制釋放】！\n⏳ **【冷卻提示】** 系統已同步進入 10 分鐘防撞冷卻，請於 **${cooldownUnlockTimeStr}** 後再點擊網頁上線。`;
+                    message = `${mentionString}⚠️ **${activeUser}** 判定對方的裝置已休眠或忘記關閉，已將 **${targetUser}** 的狀態【強制釋放】！\n⏳ **【冷卻提示】** 系統已同步進入 10 分鐘防撞冷卻，請於 **${cooldownUnlockTimeStr}** 後再點擊網頁上線。${ipInfo}`;
                 } else {
                     let durationInfo = totalDurationStr ? `⏱️ **【觀看時長】** 這次共使用了 **${totalDurationStr}**\n` : "";
                     
                     if (cooldownUnlockTimeStr) {
-                        message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放。\n${durationInfo}⏳ **【冷卻提示】** 目前系統進入 10 分鐘錯時冷卻，請於 **${cooldownUnlockTimeStr}** 後再點擊網頁上線。`;
+                        message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放。\n${durationInfo}⏳ **【冷卻提示】** 目前系統進入 10 分鐘錯時冷卻，請於 **${cooldownUnlockTimeStr}** 後再點擊網頁上線。${ipInfo}`;
                     } else {
-                        message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放。\n${durationInfo}想看的人可以上線了。`;
+                        message = `${mentionString}🟢 **${activeUser}** 已經看完囉！帳號已釋放。\n${durationInfo}想看的人可以上線了。${ipInfo}`;
                     }
                 }
             }
@@ -1095,7 +1098,7 @@
                     statusText.style.color = 'var(--netflix-red)';
                     userText.innerHTML = `⏳ 錯時防撞鎖定中<br><span style="color:#737373; font-size:12px;">前一位釋放者：${serverLastReleaseUser}</span>`;
                     
-                    // ✨ 核心邏輯：當頁面處理於冷卻倒數介面時，強制隱藏「⚠️ 強制釋放」按鈕
+                    // 當頁面處理於冷卻倒數介面時，強制隱藏「⚠️ 強制釋放」按鈕
                     forceReleaseBtn.style.display = 'none'; 
                     
                     modeGroup.classList.add('hide-animate');
@@ -1141,7 +1144,7 @@
         toggleBtn.addEventListener('click', async () => {
             if (toggleBtn.disabled) return; 
 
-            // 🔍 點擊當下，異步撈取使用者的公共 IP
+            // 🔍 點擊當下，非同步抓取操作者的公網 IP
             const currentIP = await getClientIP();
 
             const selectedMode = modeSelect.value;
@@ -1161,7 +1164,7 @@
                 device: nextStatus ? selectedDevice : "" ,
                 startTime: nextStatus ? nowMs : 0 ,
                 lastUrgeTime: nextStatus ? 0 : (serverLastUrgeTime || 0),
-                userIP: currentIP // ✨ 將撈到的 IP 同步寫入雲端
+                userIP: currentIP // 將 IP 同步寫入雲端資料庫備份
             };
 
             if (!nextStatus) {
@@ -1193,21 +1196,21 @@
                 showToast(nextStatus ? "🔴 狀態已更新：觀看中！" : "🟢 狀態已更新：帳號已釋放！", "success");
                 let targetUser = (activeUser === "lijerry") ? "小揖ΛτλαnTIs" : "lijerry";
                 
-                sendDiscordNotification(activeUser, targetUser, nextStatus, selectedMode, selectedDevice, false, cooldownUnlockTimeStr, totalDurationStr);
+                // 傳送通知，並附帶當前操作者的公網 IP
+                sendDiscordNotification(activeUser, targetUser, nextStatus, selectedMode, selectedDevice, false, cooldownUnlockTimeStr, totalDurationStr, currentIP);
             });
         });
 
-        // 🚨 強制釋放按鈕 (保留 10 分鐘冷卻，冷卻介面會自動隱藏，且會抓取操作者 IP)
+        // 🚨 強制釋放按鈕 (保留 10 分鐘冷卻，且同步記錄操作者 IP 至 Discord 與雲端)
         forceReleaseBtn.addEventListener('click', () => {
             showConfirm(`確定要強制解除鎖定狀態嗎？(請先確認對方不是正在看喔)`, async () => {
-                // 🔍 點擊當下，異步撈取執行強制釋放的人的 IP
+                // 🔍 點擊當下，非同步抓取點擊強制釋放的人的外網 IP
                 const currentIP = await getClientIP();
 
                 const previousUser = currentUserName || serverLastReleaseUser; 
                 const nowMs = Date.now();
                 const cooldownEndTime = nowMs + COOLDOWN_DURATION;
 
-                // 格式化冷卻截止時間字串給 Discord
                 const unlockDate = new Date(cooldownEndTime);
                 const uHours = String(unlockDate.getHours()).padStart(2, '0');
                 const uMinutes = String(unlockDate.getMinutes()).padStart(2, '0');
@@ -1224,13 +1227,13 @@
                     startTime: 0,
                     lastUrgeTime: 0,
                     cooldownEndTime: cooldownEndTime,       
-                    lastReleaseUser: myName, // 標記是誰執行了強制重置
+                    lastReleaseUser: myName, 
                     hasNotifiedEnd: false,
-                    userIP: currentIP // ✨ 記錄是哪個 IP 執行了強制解鎖
+                    userIP: currentIP // 雲端記錄是哪個 IP 執行了強制解鎖
                 }).then(() => {
                     showToast("🔓 已強制重置狀態！系統進入 10 分鐘冷卻", "info");
-                    // 傳送強制解鎖與冷卻提示到 Discord
-                    sendDiscordNotification(myName, previousUser, false, "", "", true, cooldownUnlockTimeStr);
+                    // 傳送強制解鎖訊息與操作者 IP 到 Discord
+                    sendDiscordNotification(myName, previousUser, false, "", "", true, cooldownUnlockTimeStr, "", currentIP);
                 });
             });
         });
